@@ -1,5 +1,4 @@
 require 'utils'
-require 'time'
 require 'fileutils'
 
 module Commands
@@ -51,6 +50,7 @@ module Commands
       ] do |p|
         tmp.open('w') { |w| IO.copy_stream p, w }
       end
+      $?.success? or raise "`tar cp` failed"
       FileUtils.mv tmp, dest
 
       vlog[dest: dest.relative_path_from(OUT)].
