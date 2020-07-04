@@ -1,4 +1,11 @@
 #!/usr/bin/env sh
 set -eo pipefail
 
+if [[ -d /data/.ssh ]]; then
+  mkdir -p -m 0700 ~/.ssh
+  cp -rL /data/.ssh/* ~/.ssh/
+  chmod 0600 ~/.ssh/id_rsa*
+  chmod 0644 ~/.ssh/config
+fi
+
 exec bundle exec ruby main.rb backup "$@"

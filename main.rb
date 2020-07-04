@@ -42,11 +42,11 @@ module Commands
         next
       end
       vlog.info "backing up"
-      dest = dir.join "#{vol}.tar"
+      dest = dir.join "#{vol}.tgz"
       tmp = dest.dirname.join("#{dest.basename}.tmp")
       size = IO.popen [
         "docker", "run", "--rm", "-v", "#{vol}:/mnt/volume",
-        "-w", "/mnt", "bash", "-c", "tar cp volume",
+        "-w", "/mnt", "bash", "-c", "tar czp volume",
       ] do |p|
         tmp.open('w') { |w| IO.copy_stream p, w }
       end

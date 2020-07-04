@@ -1,5 +1,5 @@
 # --- Build image
-FROM ruby:2.5.5-alpine3.10 as builder
+FROM ruby:2.5.5-alpine3.10
 ARG rclone_version=1.49.3
 
 # bundle install deps
@@ -13,29 +13,36 @@ RUN cd /tmp \
   && mv rclone-*/rclone /
 
 # bundle install
-COPY . /app
-RUN cd /app && bundle
+WORKDIR /app
+COPY Gemfile* ./
+RUN bundle
 
 # --- Runtime image
 FROM ruby:2.5.5-alpine3.10
 
-COPY --from=builder /rclone /opt/rclone
-COPY --from=builder /app /app
-COPY --from=builder /app/docker/rclone /usr/bin/rclone
-COPY --from=builder /usr/local/bundle /usr/local/bundle
+COPY --from=0 /rclone /opt/rclone
+COPY --from=0 /usr/local/bundle /usr/local/bundle
 
 RUN addgroup -g 122 -S docker
-RUN apk --update upgrade && apk add --no-cache docker
+RUN apk --update upgrade && apk add --no-cache docker openssh-client
 
+RUN echo $' \
+Host *\n \
+  StrictHostKeyChecking no\n \
+  UserKnownHostsFile=/dev/null\n \
+' > /etc/ssh/ssh_config
+
+# /app
 RUN addgroup -g 1000 -S app \
   && adduser -u 1000 -S app -G app \
-  && addgroup app docker \
-  && chown -R app: /app
-
-USER app
-RUN cd \
-  && mkdir -p .config/rclone \
-  && chmod 700 .config
-
+  && addgroup app docker
 WORKDIR /app
+COPY . .
+COPY ./docker/rclone /usr/bin/rclone
+RUN chown -R app: .
+USER app
+RUN (cd \
+  && mkdir -p .config/rclone \
+  && chmod 700 .config)
+
 ENTRYPOINT ["./docker/entrypoint"]
