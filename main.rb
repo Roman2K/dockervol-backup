@@ -44,13 +44,9 @@ module Commands
       vlog.info "backing up"
       dest = dir.join "#{vol}.tgz"
       tmp = dest.dirname.join("#{dest.basename}.tmp")
-      size = IO.popen [
-        "docker", "run", "--rm", "-v", "#{vol}:/mnt/volume",
-        "-w", "/mnt", "bash", "-c", "tar czp volume",
-      ] do |p|
-        tmp.open('w') { |w| IO.copy_stream p, w }
+      size = Utils.retry 5, TarError, log: log["tar_vol retry"] do
+        tar_vol vol, tmp
       end
-      $?.success? or raise "`tar cp` failed"
       FileUtils.mv tmp, dest
 
       vlog[dest: dest.relative_path_from(OUT)].
@@ -64,6 +60,23 @@ module Commands
     dir.glob("**/*").empty? or raise "found leftover files"
     FileUtils.rm_r dir
   end
+
+  def self.tar_vol(vol, f)
+    IO.popen [
+      "docker", "run", "--rm", "-v", "#{vol}:/mnt/volume",
+      "-w", "/mnt", "bash", "-c", "tar czp volume",
+    ] do |p|
+      f.open('w') { |w| IO.copy_stream p, w }
+    end.tap do
+      case $?.exitstatus
+      when 0
+      when 1 then raise TarError
+      else raise "`tar cp` failed"
+      end
+    end
+  end
+
+  class TarError < StandardError; end
 end
 
 if $0 == __FILE__
