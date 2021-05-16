@@ -26,9 +26,10 @@ module Commands
         end
         system "rclone", "move", "--exclude", "*.tmp",
           dir.to_s, "#{rclone_dest}/#{dir.basename}" \
-            or raise "`rclone move` failed"
+          or raise "`rclone move` failed"
         break if was_finished
       end
+      log["rclone"].info "finished"
     end
 
     vols.each do |vol|
