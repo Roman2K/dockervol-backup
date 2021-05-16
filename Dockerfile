@@ -1,6 +1,6 @@
 # --- Build image
-FROM ruby:2.5.5-alpine3.10
-ARG rclone_version=1.52.2
+FROM ruby:2.7.2-alpine3.13
+ARG rclone_version=1.55.1
 
 # bundle install deps
 RUN apk add --update ca-certificates git build-base openssl-dev
@@ -18,7 +18,7 @@ COPY Gemfile* ./
 RUN bundle
 
 # --- Runtime image
-FROM ruby:2.5.5-alpine3.10
+FROM ruby:2.7.2-alpine3.13
 
 COPY --from=0 /rclone /opt/rclone
 COPY --from=0 /usr/local/bundle /usr/local/bundle
