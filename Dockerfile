@@ -23,7 +23,6 @@ FROM ruby:2.5.5-alpine3.10
 COPY --from=0 /rclone /opt/rclone
 COPY --from=0 /usr/local/bundle /usr/local/bundle
 
-RUN addgroup -g 122 -S docker
 RUN apk --update upgrade && apk add --no-cache docker openssh-client
 
 RUN echo $' \
@@ -33,9 +32,10 @@ Host *\n \
 ' > /etc/ssh/ssh_config
 
 # /app
+RUN addgroup -g 998 -S docker2
 RUN addgroup -g 1000 -S app \
   && adduser -u 1000 -S app -G app \
-  && addgroup app docker
+  && addgroup app docker2
 WORKDIR /app
 COPY . .
 COPY ./docker/rclone /usr/bin/rclone
